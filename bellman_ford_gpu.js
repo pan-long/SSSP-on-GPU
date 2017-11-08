@@ -1,6 +1,6 @@
 "use strict";
 
-const mode = "gpu";
+const mode = "gpu"; // "gpu" or "cpu"
 const gpu = new GPU({mode: mode});
 const bellmanFordGpu = function (vertexNum) {
     let dist = new Array(vertexNum).fill(1e9);
@@ -22,6 +22,14 @@ const bellmanFordGpu = function (vertexNum) {
         adjMatrix[edge[0]][edge[1]] = edge[2];
         adjMatrix[edge[1]][edge[0]] = edge[2];
     });
+
+    const toTextureKernel = gpu.createKernel(function (mat) {
+        return mat[this.thread.y][this.thread.x];
+    }, {
+        output: [vertexNum, vertexNum],
+        outputToTexture: mode === "gpu",
+    });
+    adjMatrix = toTextureKernel(adjMatrix);
 
     const bellmanFordKernel = gpu.createKernel(function (dist, mat) {
         let minDist = dist[this.thread.x];
