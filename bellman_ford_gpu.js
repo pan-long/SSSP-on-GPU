@@ -1,6 +1,7 @@
 "use strict";
 
-const gpu = new GPU({mode: "gpu"});
+const mode = "gpu";
+const gpu = new GPU({mode: mode});
 const bellmanFordGpu = function (vertexNum) {
     let dist = new Array(vertexNum).fill(1e9);
 
@@ -34,7 +35,7 @@ const bellmanFordGpu = function (vertexNum) {
             size: vertexNum
         },
         output: [vertexNum],
-        outputToTexture: true
+        outputToTexture: mode === "gpu",
     });
 
     let t0 = performance.now();
@@ -44,5 +45,10 @@ const bellmanFordGpu = function (vertexNum) {
     let t1 = performance.now();
 
     console.log("Execution time: " + (t1 - t0) + "milliseconds");
-    console.log(dist.toArray(gpu));
+
+    if (mode === "gpu") {
+        console.log(dist.toArray(gpu));
+    } else {
+        console.log(dist);
+    }
 };
