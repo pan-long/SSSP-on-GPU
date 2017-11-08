@@ -2,10 +2,10 @@
 
 const gpu = new GPU({mode: "gpu"});
 const bellmanFordGpu = function (vertexNum) {
-    let dist = new Array(vertexNum).fill(0).map(() => new Array(vertexNum).fill(1e9));
+    let dist = new Array(vertexNum).fill(1e9);
 
     // Set the initial source distance to 0.
-    dist[0][0] = 0;
+    dist[0] = 0;
 
     // Parse the edges to adj matrix.
     let adjMatrix = gpu.createKernel(function () {
@@ -23,11 +23,9 @@ const bellmanFordGpu = function (vertexNum) {
     });
 
     const bellmanFordKernel = gpu.createKernel(function (dist, mat) {
-        if (this.thread.y > 0) return 0;
-
-        let minDist = dist[0][this.thread.x];
+        let minDist = dist[this.thread.x];
         for (let i = 0; i < this.constants.size; i++) {
-            minDist = Math.min(minDist, dist[0][i] + mat[i][this.thread.x]);
+            minDist = Math.min(minDist, dist[i] + mat[i][this.thread.x]);
         }
 
         return minDist;
@@ -35,7 +33,8 @@ const bellmanFordGpu = function (vertexNum) {
         constants: {
             size: vertexNum
         },
-        output: [vertexNum, vertexNum],
+        output: [vertexNum],
+        outputToTexture: true
     });
 
     let t0 = performance.now();
@@ -45,5 +44,5 @@ const bellmanFordGpu = function (vertexNum) {
     let t1 = performance.now();
 
     console.log("Execution time: " + (t1 - t0) + "milliseconds");
-    console.log(dist[0]);
+    console.log(dist.toArray(gpu));
 };
