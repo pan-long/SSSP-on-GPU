@@ -16,96 +16,117 @@ const dijkstra = function (vertexNum) {
         adjMatrix[edge[1]][edge[0]] = edge[2];
     });
 
+    let G = new Graph();
+    for (let i = 0; i < vertexNum; i++) {
+        G.add(i, adjMatrix[i]);
+    }
+
     let t0 = performance.now();
-    const shortestPaths = shortestPath(adjMatrix, vertexNum, 0);
+    const shortestPaths = G.Dijkstra(0);
     let t1 = performance.now();
 
     console.log("Execution time: " + (t1 - t0) + "milliseconds");
     console.log(shortestPaths);
 };
 
-/*
- * dijkstra.js
- *
- * Dijkstra's single source shortest path algorithm in JavaScript.
- *
- * Cameron McCormack <cam (at) mcc.id.au>
- *
- * Permission is hereby granted to use, copy, modify and distribute this
- * code for any purpose, without fee.
- *
- * Initial version: October 21, 2004
+/**
+ * Basic Graph data structure implementation
+ * @constructor
  */
+var Graph = function () {
+    this.vertices = {};
+};
 
-function shortestPath(edges, numVertices, startVertex) {
-    var done = new Array(numVertices);
-    done[startVertex] = true;
-    var pathLengths = new Array(numVertices);
-    var predecessors = new Array(numVertices);
-    for (var i = 0; i < numVertices; i++) {
-        pathLengths[i] = edges[startVertex][i];
-        if (edges[startVertex][i] != Infinity) {
-            predecessors[i] = startVertex;
-        }
+Graph.prototype.add = function (name, edges) {
+    edges = edges || null;
+    this.vertices[name] = edges;
+};
+
+Graph.prototype.length = function (u, v) {
+    return (this.vertices[u][v]);
+};
+
+/**
+ * Dijkstra's algorithm is an algorithm for finding the shortest paths between nodes in a graph
+ * @param source
+ * @returns {{}}
+ */
+Graph.prototype.Dijkstra = function (source) {
+    // create vertex set Q
+    var Q = {},
+        dist = {},
+        prev = {};
+
+    /**
+     * for each vertex v in Graph:             // Initialization
+     *     dist[v] ← INFINITY                  // Unknown distance from source to v
+     *     prev[v] ← UNDEFINED                 // Previous node in optimal path from source
+     *     add v to Q                          // All nodes initially in Q (unvisited nodes)
+     */
+    for (var vertex in this.vertices) {
+        dist[vertex] = Infinity;
+        prev[vertex] = undefined;
+        Q[vertex] = this.vertices[vertex];
     }
-    pathLengths[startVertex] = 0;
-    for (var i = 0; i < numVertices - 1; i++) {
-        var closest = -1;
-        var closestDistance = Infinity;
-        for (var j = 0; j < numVertices; j++) {
-            if (!done[j] && pathLengths[j] < closestDistance) {
-                closestDistance = pathLengths[j];
-                closest = j;
+
+    // dist[source] ← 0  // Distance from source to source
+
+    dist[source] = 0;
+
+    // while Q is not empty:
+    while (!_isEmpty(Q)) {
+        // u ← vertex in Q with min dist[u]    // Source node will be selected first
+        var u = _extractMin(Q, dist);
+
+        // remove u from Q
+        delete Q[u];
+
+        // for each neighbor v of u:           // where v is still in Q.
+        for (var neighbor in this.vertices[u]) {
+            // alt ← dist[u] + length(u, v)
+            var alt = dist[u] + this.length(u, neighbor);
+
+            /**
+             * if alt < dist[v]:               // A shorter path to v has been found
+             *     dist[v] ← alt
+             *     prev[v] ← u
+             */
+            if (alt < dist[neighbor]) {
+                dist[neighbor] = alt;
+                prev[neighbor] = u;
             }
         }
-        done[closest] = true;
-        for (var j = 0; j < numVertices; j++) {
-            if (!done[j]) {
-                var possiblyCloserDistance = pathLengths[closest] + edges[closest][j];
-                if (possiblyCloserDistance < pathLengths[j]) {
-                    pathLengths[j] = possiblyCloserDistance;
-                    predecessors[j] = closest;
-                }
-            }
+    }
+    return dist;
+};
+
+/**
+ * Just a utility method to check if an Object is empty or not
+ * @param obj
+ * @returns {boolean}
+ * @private
+ */
+function _isEmpty(obj) {
+    return Object.keys(obj).length === 0;
+}
+
+/**
+ * Extract the node with minimum distance from active vertex.
+ * This should not be required if using a priority queue
+ * @param Q
+ * @param dist
+ * @returns {*}
+ * @private
+ */
+function _extractMin(Q, dist) {
+    var minimumDistance = Infinity;
+    var nodeWithMinimumDistance;
+
+    for (var node in Q) {
+        if (dist[node] <= minimumDistance) {
+            minimumDistance = dist[node];
+            nodeWithMinimumDistance = node;
         }
     }
-    return {
-        "startVertex": startVertex,
-        "pathLengths": pathLengths,
-        "predecessors": predecessors
-    };
+    return nodeWithMinimumDistance;
 }
-
-function constructPath(shortestPathInfo, endVertex) {
-    var path = [];
-    while (endVertex != shortestPathInfo.startVertex) {
-        path.unshift(endVertex);
-        endVertex = shortestPathInfo.predecessors[endVertex];
-    }
-    return path;
-}
-
-// Example //////////////////////////////////////////////////////////////////
-
-// The adjacency matrix defining the graph.
-var _ = Infinity;
-var e = [
-    [_, _, _, _, _, _, _, _, 4, 2, 3],
-    [_, _, 5, 2, 2, _, _, _, _, _, _],
-    [_, 5, _, _, _, 1, 4, _, _, _, _],
-    [_, 2, _, _, 3, 6, _, 3, _, _, _],
-    [_, 2, _, 3, _, _, _, 4, 3, _, _],
-    [_, _, 1, 6, _, _, 2, 5, _, _, _],
-    [_, _, 4, _, _, 2, _, 5, _, _, 3],
-    [_, _, _, 3, 4, 5, 5, _, 3, 2, 4],
-    [4, _, _, _, 3, _, _, 3, _, 3, _],
-    [2, _, _, _, _, _, _, 2, 3, _, 3],
-    [3, _, _, _, _, _, 3, 4, _, 3, _]
-];
-
-// Compute the shortest paths from vertex number 1 to each other vertex
-// in the graph.
-var shortestPathInfo = shortestPath(e, 11, 1);
-
-// Get the shortest path from vertex 1 to vertex 6.
-var path1to6 = constructPath(shortestPathInfo, 6);
