@@ -10,23 +10,24 @@ const dijkstra = function (vertexNum) {
         }
     }).setOutput([vertexNum, vertexNum])();
 
-    let edges = getGraph(vertexNum);
-    edges.forEach(function (edge) {
-        adjMatrix[edge[0]][edge[1]] = edge[2];
-        adjMatrix[edge[1]][edge[0]] = edge[2];
+    parseGraph().then(edges => {
+        edges.forEach(function (edge) {
+            adjMatrix[edge[0]][edge[1]] = edge[2];
+            adjMatrix[edge[1]][edge[0]] = edge[2];
+        });
+
+        let G = new Graph();
+        for (let i = 0; i < vertexNum; i++) {
+            G.add(i, adjMatrix[i]);
+        }
+
+        let t0 = performance.now();
+        const shortestPaths = G.Dijkstra(0);
+        let t1 = performance.now();
+
+        console.log("Execution time: " + (t1 - t0) + "milliseconds");
+        console.log(shortestPaths);
     });
-
-    let G = new Graph();
-    for (let i = 0; i < vertexNum; i++) {
-        G.add(i, adjMatrix[i]);
-    }
-
-    let t0 = performance.now();
-    const shortestPaths = G.Dijkstra(0);
-    let t1 = performance.now();
-
-    console.log("Execution time: " + (t1 - t0) + "milliseconds");
-    console.log(shortestPaths);
 };
 
 /**
